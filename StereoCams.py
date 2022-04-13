@@ -147,7 +147,7 @@ def singleCalibration(checkerboard_path,coordinates=None,objpoints=None,frameDim
             objpoints = np.load(str((pathName/'objpoints.npy')))
         else:
             print('No coordinates given or in directory.')
-            exit()
+            return
     else:
         coordinates=coordinates
         objpoints=objpoints
@@ -177,11 +177,66 @@ def stereoCalibration(calibration_path,objpoints=None,left_coordinates=None, rig
                             left_matrix=None,right_matrix=None,left_dist=None,right_dist=None,frameDims=None):
     
     pathName = Path(calibration_path) 
+    leftDir = pathName/'Left'
+    rightDir = pathName/'Right'
+
     stereocalib_criteria = (cv2.TERM_CRITERIA_MAX_ITER +
                                 cv2.TERM_CRITERIA_EPS, 100, 1e-5)
     if not left_coordinates:
+        #load left_coordinates
         print('Loading left coordinates from directory...')
-        
+        if (leftDir/'coordinates.npy').is_file() & (leftDir/'objpoints.npy').is_file():
+            left_coordinates = np.load(str((leftDir/'coordinates.npy')))
+            objpoints = np.load(str((leftDir/'objpoints.npy')))
+        else:
+            print('Cannot find coordinates in {} directory.'.format(leftDir.name))
+            return
+    if not right_coordinates:
+        #load right_coordinates
+        print('Loading right coordinates from directory...')
+        if (rightDir/'coordinates.npy').is_file() & (rightDir/'objpoints.npy').is_file():
+            right_coordinates = np.load(str((rightDir/'coordinates.npy')))
+            objpoints = np.load(str((rightDir/'objpoints.npy')))
+        else:
+            print('Cannot find coordinates in {} directory.'.format(rightDir.name))
+            return
+    if not left_matrix:
+        #load left_matrix
+        print('Loading left cam matrix from directory...')
+        if (leftDir/'mtx.npy').is_file() & (leftDir/'dist.npy').is_file():
+            left_matrix = np.load(str((leftDir/'mtx.npy')))
+            left_dist = np.load(str((leftDir/'dist.npy')))
+        else:
+            print('Cannot find coordinates in {} directory.'.format(leftDir.name))
+            return
+    if not right_matrix:
+        #load right_matrix
+        print('Loading right cam matrix from directory...')
+        if (rightDir/'mtx.npy').is_file() & (rightDir/'dist.npy').is_file():
+            right_matrix = np.load(str((rightDir/'mtx.npy')))
+            right_dist = np.load(str((rightDir/'dist.npy')))
+        else:
+            print('Cannot find coordinates in {} directory.'.format(rightDir.name))
+            return
+    if not frameDims:
+        globbed = leftDir.glob('*.png')
+        imageList = [x for x in globbed if x.is_file()]
+        img = cv2.imread(str(imageList[0])
+        frameDims = img.shape
+
+    ret, M1, d1, M2, d2, R, T, E, F = cv2.stereoCalibrate(objpoints,
+            left_coordinates,right_coordinates,
+            left_matrix,left_dist,
+            right_matrix,right_dist,frameDims
+            criteria=stereocalib_criteria)
+    
+
+    camera_model = dict([('M1', M1), ('M2', M2), ('dist1', d1),
+                            ('dist2', d2), ('R', R), ('T', T),
+                            ('E', E), ('F', F)])
+
+    cv2.destroyAllWindows()
+    return camera_model
 
 
 def main():
@@ -191,6 +246,16 @@ def main():
         
     elif Path(Path.cwd()/'Test'/'Calibration').exists():
         print('Using existing calibration series')
+        l_coord,l_objPoints,l_frameDims = checkerboardSeriesLocator((Path.cwd()/'Test'/'Calibration'/'Left'))
+        r_coord,r_objPoints,r_frameDims = checkerboardSeriesLocator((Path.cwd()/'Test'/'Calibration'/'Right'))
+
+        l_mtx, l_dist, _,_ = singleCalibration((Path.cwd()/'Test'/'Calibration'/'Left'),l_coord,l_objPoints,l_frameDims)
+        r_mtx, r_dist, _,_ = singleCalibration((Path.cwd()/'Test'/'Calibration'/'Right'),r_coord,r_objPoints,r_frameDims)
+        
+
+        cam_model = stereoCalibration((Path.cwd()/'Test'/'Calibration'),l_objPoints,l_coord,r_coord
+                                            l_mtx,r_mtx,l_dist,r_dist,l_frameDims)
+
 
     else:
         print('No calibration images in expected location, exiting.')
