@@ -4,7 +4,11 @@ from pathlib import Path
 from tqdm import tqdm
 
 
-def captureCalibration():
+def captureCalibration(savePath):
+    """
+    Inputs: 
+        savePath: the path to the save location the calibration folders and images
+    """
     camLeft     = cv2.VideoCapture(0)
     camRight    = cv2.VideoCapture(1)
 
@@ -14,7 +18,9 @@ def captureCalibration():
 
     img_counter = 0
 
-    pathName = Path('D:/StereoCams/Test')
+    # pathName = Path('D:/StereoCams/Test')
+    pathName = savePath
+
     Path(pathName/"Calibration").mkdir(parents=True,exist_ok=True)
     Path(pathName/"Calibration"/"Left").mkdir(parents=True,exist_ok=True)
     Path(pathName/"Calibration"/"Right").mkdir(parents=True,exist_ok=True)
@@ -40,7 +46,7 @@ def captureCalibration():
         elif k%256 == 32:
             # SPACE pressed
             img_name = "calibration_frame_{}.png".format(str(img_counter).zfill(2))
-            cv2.imwrite(str(  (leftCalibrationDir / img_name)  ), np.flipud(frameLeft))
+            cv2.imwrite(str(  (leftCalibrationDir / img_name)  ), frameLeft)
             cv2.imwrite(str(  (rightCalibrationDir / img_name)  ), frameRight)
 
             print("Dual {} written!".format(img_name))
