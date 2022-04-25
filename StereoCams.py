@@ -247,19 +247,22 @@ def stereoCalibration(calibration_path,objpoints=None,left_coordinates=None, rig
 
 
 def main():
-    """Run main function."""
+    #Run main function.
     if yesno('Do you want to capture calibration images?'):
         calibSavePath = Path(input("Give the calibration image save location"))
         captureCalibration(calibSavePath)
 
-        leftpath = calibSavePath/"Left"
-        rightpath = calibSavePath/"Right"
+        leftpath = calibSavePath/"Calibration"/"Left"
+        rightpath = calibSavePath/"Calibration"/"Right"
 
-        leftcoord,objp,frameDims = checkerboardSeriesLocator(leftpath)
-        rightcoord,_,_ = checkerboardSeriesLocator(rightpath)
+        l_coord,l_objPoints,l_frameDims = checkerboardSeriesLocator(leftpath)
+        r_coord,r_objPoints,r_frameDims = checkerboardSeriesLocator(rightpath)
 
-        left_mtx,left_dist,left_rvecs,left_tvecs = singleCalibration(leftpath)
-        right_mtx,right_dist,right_rvecs,right_tvecs = singleCalibration(rightpath)
+        l_mtx, l_dist,_,_ = singleCalibration(leftpath)
+        r_mtx, r_dist,_,_ = singleCalibration(rightpath)
+
+        cam_model = stereoCalibration((calibSavePath/'Calibration'),l_objPoints,l_coord,r_coord
+                                l_mtx,r_mtx,l_dist,r_dist,l_frameDims)
 
         
     elif Path(Path.cwd()/'Test'/'Calibration').exists():
