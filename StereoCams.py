@@ -19,7 +19,7 @@ def captureCalibration(savePath):
     img_counter = 0
 
     # pathName = Path('D:/StereoCams/Test')
-    pathName = savePath
+    pathName = Path(savePath)
 
     Path(pathName/"Calibration").mkdir(parents=True,exist_ok=True)
     Path(pathName/"Calibration"/"Left").mkdir(parents=True,exist_ok=True)
@@ -39,6 +39,7 @@ def captureCalibration(savePath):
         cv2.imshow("right cam",frameRight)
 
         k = cv2.waitKey(1)
+        print("Press space to capture, escape to finish")
         if k%256 == 27:
             # ESC pressed
             print("Escape hit, closing...")
@@ -193,9 +194,21 @@ def stereoCalibration(calibration_path,objpoints=None,left_coordinates=None, rig
 def main():
     """Run main function."""
     if yesno('Do you want to capture calibration images?'):
-        captureCalibration()
+        calibSavePath = Path(input("Give the calibration image save location"))
+        captureCalibration(calibSavePath)
+
+        leftpath = calibSavePath/"Left"
+        rightpath = calibSavePath/"Right"
+
+        leftcoord,objp,frameDims = checkerboardSeriesLocator(leftpath)
+        rightcoord,_,_ = checkerboardSeriesLocator(rightpath)
+
+        left_mtx,left_dist,left_rvecs,left_tvecs = singleCalibration(leftpath)
+        right_mtx,right_dist,right_rvecs,right_tvecs = singleCalibration(rightpath)
+
         
     elif Path(Path.cwd()/'Test'/'Calibration').exists():
+        #if main run from a folder containing calibration images, those will be used
         print('Using existing calibration series')
 
     else:
